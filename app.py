@@ -152,7 +152,28 @@ def serve():
 @app.route('/search')
 def search():
     prefix = request.args.get('prefix')
-    results = trie.search_prefix(prefix)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, name 
+        FROM customers
+        WHERE name LIKE %s
+    """, (prefix + '%',))
+
+    rows = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    results = []
+    for row in rows:
+        results.append({
+            "token": row[0],
+            "name": row[1]
+        })
+
     return jsonify({"results": results})
 
 
